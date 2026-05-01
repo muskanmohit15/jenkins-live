@@ -9,36 +9,29 @@ pipeline {
 
     stages {
 
-        stage('git clone') {
+        stage('Build Docker Image') {
             steps {
-                git branch: 'main', url: 'https://github.com/muskanmohit15/jenkins-live.git'
+                sh """
+                docker build -t ${IMAGE_NAME} .
+                """
             }
         }
 
-        stage('docker build') {
+        stage('Stop Old Container') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh """
+                docker stop ${CONTAINER_NAME} || true
+                docker rm ${CONTAINER_NAME} || true
+                """
             }
         }
 
-        stage('Stop Old') {
+        stage('Run Container') {
             steps {
-                sh '''
-                docker stop $CONTAINER_NAME || true
-                docker rm $CONTAINER_NAME || true
-                '''
+                sh """
+                docker run -d -p ${PORT}:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}
+                """
             }
         }
-
-        stage('Start Container') {
-            steps {
-                sh '''
-                docker run -d -p $PORT:80 --name $CONTAINER_NAME $IMAGE_NAME
-                '''
-            }
-        }
-
-
     }
-
 }
